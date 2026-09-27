@@ -2,21 +2,51 @@ const express = require('express');
 const app = express(); 
 const connectDB = require('./config/database');
 const User = require('./models/user');
+const {validateSignUpData} = require('./utils/validation');
+const bcrypt = require('bcrypt');
 
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
     //Create a new instance of user
-    console.log(req.body)
-    const user = new User(req.body);
+
+    //validate data
+    validateSignUpData(req);
+
+    const {firstName, lastName, emailId, password} = req.body;
+    //encrypt password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const user = new User({firstName, lastName, emailId, password: passwordHash});
 
     try {
         await user.save();
         res.send("User added successfully!!")
     } catch(err) {
-        res.status(400).send("Error saving the user");
+        res.status(400).send("Error saving the user" + err);
     }
 })
+
+app.post("/login", async (req, res) => {
+    try {
+        const {emailId, password} = req.body();
+        const user = await User.findOne({emailId: emailId});
+
+        if(!user){
+            throw new Error("Email not present");
+        }
+
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if(isPasswordValid) {
+            res.status(200).send("Login successful!");
+        } else {
+            throw new Error("Login not successful");
+        }
+    } catch(err) {
+        res.status(400).send("ERROR: " + err);
+    }
+});
 
 app.get("/user", async (req, res)  =>{
     try {
@@ -48,15 +78,27 @@ app.delete("/user", async (req, res) => {
     }
 });
 
-app.patch("/user", async (req, res) => {
-    const emailId = req.body.emailId;
+app.patch("/user/:userId", async (req, res) => {
+    const userId = req.params?.userId;
     const data = req.body;
+    const ALLOWED_UPDATES = [
+        "firstName", "photoUrl", "about", "gender", "age", "skills"
+    ]
+    const isUpdatesAllowed = Object.keys(data).every(k=> ALLOWED_UPDATES.includes(k));
 
     try {
-        const user = await User.findOneAndUpdate({ emailId: emailId }, data);
+        if(!isUpdatesAllowed) {
+            throw new Error("This field cannot be changed");
+        }
+
+        if(!data.photoUrl) {
+            data.photoUrl = "https://www.magnific.com/free-vector/woman-with-long-brown-hair-pink-shirt_233878810.htm#fromView=keyword&page=1&position=9&uuid=5f2cb9a6-1cd8-4ef6-80d5-43eb000a3431&track=ais_hybrid&query=Default+user"
+        }
+
+        const user = await User.findByIdAndUpdate({ _id: userId }, data, {runValidators: true});
         res.send("User updated successfully!!");
     } catch(err) {
-        res.status(404).send("Something went wrong!!");
+        res.status(404).send("Something went wrong!!"+ err);
     }
 });
 
