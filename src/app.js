@@ -4,7 +4,11 @@ const connectDB = require('./config/database');
 const User = require('./models/user');
 const {validateSignUpData} = require('./utils/validation');
 const bcrypt = require('bcrypt');
+const cookie_parser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
+const {userAuth} = require('./middlewares/auth');
 
+app.use(cookie_parser());
 app.use(express.json());
 
 app.post("/signup", async (req, res) => {
@@ -29,16 +33,22 @@ app.post("/signup", async (req, res) => {
 
 app.post("/login", async (req, res) => {
     try {
-        const {emailId, password} = req.body();
+        const {emailId, password} = req.body;
         const user = await User.findOne({emailId: emailId});
 
         if(!user){
             throw new Error("Email not present");
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await user.validatePassword(password);
 
         if(isPasswordValid) {
+
+            //Create a JWT token - Not anymore as we have declared it in userSchema we can use it directly
+            // const token = await jwt.sign({_id: user._id}, "DEVTinder@880", {expiresIn: "7d"})
+            
+            const token = await user.getJwt();
+            res.cookie("token", token);
             res.status(200).send("Login successful!");
         } else {
             throw new Error("Login not successful");
@@ -46,6 +56,22 @@ app.post("/login", async (req, res) => {
     } catch(err) {
         res.status(400).send("ERROR: " + err);
     }
+});
+
+app.get("/profile", userAuth, async (req, res) => {
+    try {
+        const user = req.user;
+
+        res.send(user);
+    } catch(err) {
+        res.status(400).send("ERROR: " + err);
+    }    
+});
+
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
+        const user = req.user;
+
+        res.send(user.firstName + " has sent a connection request.");
 });
 
 app.get("/user", async (req, res)  =>{
@@ -78,7 +104,7 @@ app.delete("/user", async (req, res) => {
     }
 });
 
-app.patch("/user/:userId", async (req, res) => {
+app.patch("/user/:userId", async (req, res) => {    
     const userId = req.params?.userId;
     const data = req.body;
     const ALLOWED_UPDATES = [
