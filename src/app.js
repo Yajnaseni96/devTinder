@@ -21,7 +21,7 @@ connectDB()
             console.log("Server created successfully!!")
         });
     })
-    .catch(()=>{
+    .catch(() => {
         console.log("Database is not connected");
     })
 

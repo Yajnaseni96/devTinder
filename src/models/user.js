@@ -17,7 +17,7 @@ const userSchema = new mongoose.Schema(
         emailId: {
             type: String,
             required: true,
-            unique: true,
+            unique: true, //indexing in DB
             lowercase: true,
             trim: true,
             validate(value) {
@@ -81,7 +81,7 @@ const userSchema = new mongoose.Schema(
 
 userSchema.methods.getJWT = async function() {
     const user = this;  //should be a normal function always
-    const token = await jwt.sign({_id: user._id}, "DEVTinder@880", { expiresIn: "7d"});
+    const token =  jwt.sign({_id: user._id}, "DEVTinder@880", { expiresIn: "7d"});
 
     return token;
 }

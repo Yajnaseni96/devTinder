@@ -1,13 +1,65 @@
-const express = require('express');
-const User = require('../models/user');
-const {userAuth} = require('../middlewares/auth');
+const express = require("express");
+const { userAuth } = require("../middlewares/auth");
+const ConnectionRequest = require("../models/connectionRequest");
+const User = require("../models/user");
 
 const requestRouter = express.Router();
 
-requestRouter.post("/sendConnectionRequest", userAuth, async (req, res) => {
-        const user = req.user;
+requestRouter.post(
+    "/request/send/:status/:toUserId",
+    userAuth,
+    async (req, res) => {
+        try {
+            const fromUserId = req.user._id;
+            const toUserId = req.params.toUserId;
+            const status = req.params.status;
 
-        res.send(user.firstName + " has sent a connection request.");
-});
+            const statusType = ["ignored", "interested"];
+
+            if (!statusType.includes(status)) {
+                return res.status(400).json({
+                    message: "Invalid status! " + status
+                });
+            }
+
+            const isUserPresent = await User.findById(toUserId);
+
+            if (!isUserPresent) {
+                return res.status(400).send("User not found");
+            }
+
+            const existingConnection = await ConnectionRequest.findOne({
+                $or: [
+                    { fromUserId, toUserId },
+                    { fromUserId: toUserId, toUserId: fromUserId }
+                ]
+            });
+
+            if (existingConnection) {
+                return res.status(400).json({
+                    message: "Connection already exists!"
+                });
+            }
+
+            const connectionRequest = new ConnectionRequest({
+                fromUserId,
+                toUserId,
+                status
+            });
+
+            const data = await connectionRequest.save();
+          
+            return res.status(200).json({
+                message: `${req.user.firstName} is ${status} in ${isUserPresent.firstName}`,
+                data
+            });
+
+        } catch (err) {
+            return res.status(400).json({
+                message: err.message
+            });
+        }
+    }
+);
 
 module.exports = requestRouter;

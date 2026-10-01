@@ -5,22 +5,23 @@ const userAuth = async (req, res, next) => {
     try {
         const {token} = req.cookies;
 
-        if(!token) {
-            throw new Error("Token is not valid!!");
+        if (!token) {
+            return res.status(401).send("Token is not valid!!");
         }
 
-        const decodedObj = await jwt.verify(token, "DEVTinder@880");
+        const decodedObj = jwt.verify(token, "DEVTinder@880");
         const { _id } = decodedObj;
         const user = await User.findById(_id);
 
-        if(!user) {
-            throw new Error("User is not found");
+        if (!user) {
+            return res.status(401).send("User is not found");
         }
 
         req.user = user;
-        next(); //since we are using a middleware, next will take us back to request handler
-    } catch(err) {
-        res.status(400).send("ERROR: ", err);
+        next();
+
+    } catch (err) {
+        return res.status(401).send("ERROR: " + err.message);
     }
 };
 
