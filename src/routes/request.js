@@ -48,7 +48,7 @@ requestRouter.post(
             });
 
             const data = await connectionRequest.save();
-          
+
             return res.status(200).json({
                 message: `${req.user.firstName} is ${status} in ${isUserPresent.firstName}`,
                 data
@@ -65,8 +65,7 @@ requestRouter.post(
 requestRouter.post("/request/review/:status/:requestId", userAuth, async (req, res) => {
     try {
         const loggedInUser = req.user; //userAuth middleware returns back and adds re.user.
-        const {status, requestId} = req.params.status;
-
+        const {status, requestId} = req.params;
         const allowedStatus = ["accepted", "rejected"];
 
         if(!allowedStatus.includes(status)) {
@@ -83,9 +82,11 @@ requestRouter.post("/request/review/:status/:requestId", userAuth, async (req, r
             return res.status(404).json({message: "Connection not found!!"});
         }
 
-        const data = connectionRequest.status = status;
-        res.send(200).json({message: "Connection request " + data + status})
+        connectionRequest.status = status;
         await connectionRequest.save();
+        console.log(connectionRequest)
+        const data = res.send(200).json({message: "Connection request " + data + status})
+        
     } catch {
 
     }
