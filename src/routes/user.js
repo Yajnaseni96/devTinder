@@ -33,16 +33,25 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
                 {toUserId: loggedInUser._id, status: "accepted"},
                 {fromUserId: loggedInUser._id, status: "accepted"}
             ]
-        }).populate("fromUserId", userData);
+        })
+        .populate("fromUserId", userData)
+        .populate("toUserId", userData);
 
         if(!connections) {
             throw new Error("No connections found")
         }
-        const data = connections.map((user) => user.fromUserId);
-        res.json({data: data});
+        
+        const data = connections.map((row) => {
+            if(loggedInUser._id.toString() === row.fromUserId._id.toString()) {
+                return row.toUserId;
+            }
+            
+            return row.fromUserId;
+        });
+
+        res.json({ data});
     } catch(err) {
-        console.log(err)
-        return res.statusCode(400).json({message: err.message});
+        res.status(400).json({message: err.message});
     }
 });
 
