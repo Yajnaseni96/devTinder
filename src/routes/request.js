@@ -62,36 +62,39 @@ requestRouter.post(
     }
 );
 
-requestRouter.post("/request/review/:status/:requestId", userAuth, async (req, res) => {
-    try {
-        const loggedInUser = req.user; //userAuth middleware returns back and adds re.user.
-        const {status, requestId} = req.params;
-        const allowedStatus = ["accepted", "rejected"];
+requestRouter.post(
+    "/request/review/:status/:requestId",
+    userAuth, 
+    async (req, res) => {
+        try {
+            const loggedInUser = req.user; //userAuth middleware returns back and adds re.user.
+            const {status, requestId} = req.params;
+            const allowedStatus = ["accepted", "rejected"];
 
-        if(!allowedStatus.includes(status)) {
-            return res.status(400).json({message: "Invalid status!"});
+            if(!allowedStatus.includes(status)) {
+                return res.status(400).json({message: "Invalid status!"});
+            }
+
+            const connectionRequest = await ConnectionRequest.findOne({
+                _id: requestId,
+                status: "interested",
+                toUserId: loggedInUser._id
+            })
+
+            if(!connectionRequest) {
+                return res.status(404).json({message: "Connection not found!!"});
+            }
+
+            connectionRequest.status = status;
+            await connectionRequest.save();
+
+            const data = res.send(200).json({message: "Connection request " + data + status})
+        } catch {
+            return res.status(400).json({
+                message: err.message
+            });
         }
-
-        const connectionRequest = await ConnectionRequest.findOne({
-            _id: requestId,
-            status: "interested",
-            toUserId: loggedInUser._id
-        })
-
-        if(!connectionRequest) {
-            return res.status(404).json({message: "Connection not found!!"});
-        }
-
-        connectionRequest.status = status;
-        await connectionRequest.save();
-        console.log(connectionRequest)
-        const data = res.send(200).json({message: "Connection request " + data + status})
-        
-    } catch {
-        return res.status(400).json({
-            message: err.message
-        });
     }
-});
+);
 
 module.exports = requestRouter;
