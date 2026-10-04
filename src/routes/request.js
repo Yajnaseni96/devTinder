@@ -88,7 +88,9 @@ requestRouter.post("/request/review/:status/:requestId", userAuth, async (req, r
         const data = res.send(200).json({message: "Connection request " + data + status})
         
     } catch {
-
+        return res.status(400).json({
+            message: err.message
+        });
     }
 });
 
