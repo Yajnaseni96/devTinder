@@ -1,6 +1,7 @@
 const express = require('express');
 const {userAuth} = require('../middlewares/auth');
 const ConnectionRequest = require('../models/connectionRequest');
+const User = require('../models/user');
 
 const userRouter = express.Router();
 const userData = ["firstName", "lastName", "age", "photoUrl", "about", "skills"];
@@ -50,6 +51,34 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
         });
 
         res.json({ data});
+    } catch(err) {
+        res.status(400).json({message: err.message});
+    }
+});
+
+userRouter.get("/feed", userAuth, async (req, res) => {
+    try {
+        const loggedInUser = req.user;
+
+        const connectionRequest = await ConnectionRequest.find({
+            $or: [{toUserId: loggedInUser._id}, {fromUserId: loggedInUser._id}],
+        }).select("fromUserId toUserId");
+        console.log("connectionRequest", connectionRequest)
+        
+        const hideUsersFromFeed = new Set();
+        connectionRequest.forEach((req) => {
+            hideUsersFromFeed.add(req.fromUserId.toString());
+            hideUsersFromFeed.add(req.toUserId.toString());
+        })
+        console.log("hideUsersFromFeed", hideUsersFromFeed)
+        const users = await User.find({
+            $and: [
+                {_id: { $nin:  Array.from(hideUsersFromFeed)}}, //nin means not in this array
+                {_id: { $ne: loggedInUser._id}} //ne means not equal to
+            ]
+        });
+
+        res.send(users);
     } catch(err) {
         res.status(400).json({message: err.message});
     }
