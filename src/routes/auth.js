@@ -42,7 +42,9 @@ authRouter.post("/login", async (req, res) => {
             
             const token = await user.getJWT();
             res.cookie("token", token);
-            res.status(200).send(user);
+            const userResponse = user.toObject();
+            delete userResponse.password;
+            res.status(200).json(userResponse);
         } else {
             throw new Error("Login not successful");
         }
