@@ -6,7 +6,7 @@ const connectDB = async () => {
 
     // const result = await User.updateMany(
     //     {}, 
-    //     { $set: { photoUrl: "https://pravatar.cc" } }
+    //     { $set: { photoUrl: "https://geographyandyou.com/images/user-profile.png" } }
     // );
 
 }

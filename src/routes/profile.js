@@ -29,7 +29,12 @@ profileRouter.patch("/profile/edit", userAuth, async (req, res) => {
         Object.keys(req.body).forEach(key => loggedInUser[key] = req.body[key]);
         await loggedInUser.save();
 
-        res.send(`${loggedInUser.firstName} Profile updated successfully!`);
+        res.json({
+            message: `${loggedInUser.firstName}, your profile updated successfuly`,
+            data: loggedInUser,
+        });
+
+        console.log("Updated photoUrl:", loggedInUser.photoUrl);
     } catch(err) {
         res.status(400).send("ERROR: " + err);
     }    
