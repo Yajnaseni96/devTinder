@@ -54,14 +54,9 @@ authRouter.post("/login", async (req, res) => {
 });
 
 authRouter.post("/logout", async(req, res) => {
-    const {emailId} = req.body;
-    const user = await User.findOne({emailId: emailId});;
-    const token = await user.getJWT();
-
-    res.cookie(token, null, {
+    res.cookie("token", null, {
         expires: new Date(Date.now())
     });
-
     res.send("Logout successful!!")
 });
 
