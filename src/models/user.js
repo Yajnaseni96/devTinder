@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema(
         },
         photoUrl: {
             type: String,
-            default: "https://www.magnific.com/free-vector/woman-with-long-brown-hair-pink-shirt_233878810.htm#fromView=keyword&page=1&position=9&uuid=5f2cb9a6-1cd8-4ef6-80d5-43eb000a3431&track=ais_hybrid&query=Default+user",
+            default: "https://i.pravatar.cc/150",
             validate(value) {
                 if(!validator.isURL(value)) {
                     throw new Error("Invalid photo url: " + value);
